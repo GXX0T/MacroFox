@@ -9,7 +9,7 @@
 - Settings saved between runs
 
 ## Installation
-1. Download [`MacroFox.exe`]()
+1. Download [`MacroFox.exe`](https://github.com/GXX0T/MacroFox/releases/tag/1.0)
 2. Run `MacroFox.exe`
 
 ## Building
