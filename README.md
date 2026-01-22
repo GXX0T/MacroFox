@@ -4,7 +4,8 @@
 
 ![GitHub all releases](https://img.shields.io/github/downloads/GXX0T/MacroFox/total?style=for-the-badge&color=d71920&labelColor=000000&label=DOWNLOADS&logo=)
 
-# Please leave me a star :3 ⭐
+> [!TIP]
+> Please leave me a star :3 ⭐
 
 ## Features
 - Light / Dark / Nothing / Pinky themes
@@ -16,17 +17,31 @@
 1. Download [`MacroFox.exe`](https://github.com/GXX0T/MacroFox/releases/tag/1.0)
 2. Run `MacroFox.exe`
 
-## Building
-You can build it yourself, it's open source:
+> [!WARNING]
+> This is beta-version. Please report any bug you find
 
-`pip install flet keyboard flet-timer`
+## Building
+<details>
+  <summary>
+  
+  </summary>
+  You can build it yourself, it's open source:
+
+```pip
+pip install flet keyboard flet-timer
+```
+
 > flet (core framework)
 >
 > keyboard (for hotkey automation)
 >
 > flet-timer (for UI updates)
 
-`flet pack main.py --icon materials/icon.png`
+```console
+flet pack main.py --icon materials/icon.png
+```
+</details>
+
 
 ## Preview
 > *may take a while to load gif*
