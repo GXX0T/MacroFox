@@ -40,6 +40,8 @@ pip install flet keyboard flet-timer
 ```console
 flet pack main.py --icon materials/icon.png
 ```
+
+> you also can use `pyinstaller` or any other builder
 </details>
 
 
