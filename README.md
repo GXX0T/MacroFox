@@ -10,6 +10,7 @@
 ## Features
 - Light / Dark / Nothing / Pinky themes
 - Save and load presets
+- Change Materials timers
 - Disable slots with one click
 - Settings saved between runs
 
@@ -38,10 +39,10 @@ pip install flet keyboard flet-timer
 > flet-timer (for UI updates)
 
 ```console
-flet pack main.py --icon materials/icon.png
+pyinstaller --noconfirm --onefile --windowed --icon "C:\Users\YOUR_ICON_PATH" --name "MacroFox" --clean --add-data "C:\Users\YOUR_MATERIALS_PATH" --add-data "C:\Users\YOUR_BUILD_PATH." --hidden-import "flet, flet.core, flet.runtime, flet_timer"  "C:\Users\YOUR_EXPORT_PATH"
 ```
 
-> you also can use `pyinstaller` or any other builder
+> I used `auto-py-to-exe` this time. You also can use `pyinstaller` or any other builder 
 </details>
 
 
