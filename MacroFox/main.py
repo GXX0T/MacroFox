@@ -6,13 +6,14 @@ from flet_timer import Timer
 import json
 from pathlib import Path
 
-
-
+# --- EMBEDDED ASSETS ---
+from assets_b64 import MATERIAL_IMAGES, APP_ICON_B64
 
 # --- Constants ---
-MATERIALS = ["Cloud_Vial", "Coconut", "Enzymes", "Glitter", "Glue", "Gumdrops", "Jelly_Beans", "Marshmallow_Bee", "Micro-Converter", "Oil", "Purple_Potion", "Stinger", "Super_Smoothie", "Sprinkler_Builder"]
+MATERIALS = ["Sprinkler_Builder", "Gumdrops", "Coconut", "Stinger", "Snowflake", "Jelly_Beans", "Red_Extract", "Blue_Extract", "Glitter", "Glue", "Oil", "Enzymes", "Tropical_Drink", "Purple_Potion", "Super_Smoothie", "Marshmallow_Bee", "Magic_Bean"]
 
 MATERIAL_INFO = {
+    "Blue_Extract": "Grants x1.25 Blue Pollen for 10 minutes.",
     "Cloud_Vial": "Summons a Cloud in the field you're standing in. Lasts for 3 minutes.",
     "Coconut": "Drops a huge Coconut into the field. Catch it to convert pollen to Honey Tokens.",
     "Enzymes": "Grants +10% Instant Conversion and x1.25 Conversion Rate for 10 minutes.",
@@ -20,19 +21,43 @@ MATERIAL_INFO = {
     "Glue": "Grants x1.25 Bee Gather Pollen and Tools for 10 minutes.",
     "Gumdrops": "Use while standing in a field to cover flowers in goo. Goo grants bonus honey.",
     "Jelly_Beans": "Scatters various buff-granting beans on nearby flowers. Works best when shared.",
+    "Magic_Bean": "Plants a random Sprout in the field you're standing in.",
     "Marshmallow_Bee": "50% White Pollen, +50% Capacity, and +250% Conversion Rate for 30 minutes.",
     "Micro-Converter": "Instantly converts all Pollen in your bag to Honey.",
     "Oil": "Grants x1.2 Bee and Player Movespeed for 10 minutes.",
     "Purple_Potion": "Grants x1.25 Capacity, x1.25 Convert Rate At Hive, x1.5 Red Pollen, x1.5 Blue Pollen, x1.3 Bee Gather Pollen, and x1.3 Pollen From Tools for 15 minutes.",
+    "Red_Extract": "Grants x1.25 Red Pollen for 10 minutes.",
+    "Snowflake": "Sends a cool, soothing breeze to all the players on the server (Melts after Beesmas!)",
     "Sprinkler_Builder": "Use while standing in flowers to place a Sprinkler.",
     "Stinger": "Grants your bees x1.5 attack for 30 seconds.",
     "Super_Smoothie": "Grants x1.5 Capacity, x1.6 Red Pollen, x1.6 Blue Pollen, x1.6 White Pollen, x1.4 Bee Gather Pollen, x1.4 Pollen From Tools, x2 Convert Rate, x1.5 Convert Rate At Hive, +12% Instant Conversion, +7% Critical Chance, x1.25 Bee Movespeed, and x1.25 Player Movespeed for 20 minutes.",
+    "Tropical_Drink": "Grants x1.25 White Pollen and +5% Critical Chance for 10 minutes.",
 }
 
-MATERIAL_TIMER = {"Cloud_Vial": 180, "Coconut": 1, "Enzymes": 600, "Glitter": 910, "Glue": 600, "Gumdrops": 1, "Jelly_Beans": 45, "Marshmallow_Bee": 1800, "Micro-Converter": 15, "Oil": 600, "Purple_Potion": 900, "Sprinkler_Builder": 5, "Stinger": 10, "Super_Smoothie": 1200}
+MATERIAL_TIMER = {
+    "Blue_Extract": 600,
+    "Cloud_Vial": 180,
+    "Coconut": 1,
+    "Enzymes": 600,
+    "Glitter": 910,
+    "Glue": 600,
+    "Gumdrops": 1,
+    "Jelly_Beans": 45,
+    "Magic_Bean": 1,
+    "Marshmallow_Bee": 1800,
+    "Micro-Converter": 15,
+    "Oil": 600,
+    "Purple_Potion": 900,
+    "Red_Extract": 600,
+    "Snowflake": 1,
+    "Sprinkler_Builder": 5,
+    "Stinger": 10,
+    "Super_Smoothie": 1200,
+    "Tropical_Drink": 600,
+}
 
 PRESETS = {
-    "Boost": ["Sprinkler_Builder", "Stinger", "Coconut", "Jelly_Beans", "Gumdrops", "Micro-Converter", "Glitter"],
+    "Boost": ["Sprinkler_Builder", "Stinger", "Coconut", "Jelly_Beans", "Gumdrops", "Super_Smoothie", "Glitter"],
 }
 
 # --- Theme Palettes ---
@@ -89,19 +114,27 @@ THEMES = {
 
 BORDER_RADIUS = 6
 
-
 def format_time(seconds):
     m = int(seconds) // 60
     s = int(seconds) % 60
     return f"{m:02d}:{s:02d}"
 
+def get_image_src(mat):
+    """Return base64 image URI for Flet"""
+    if mat in MATERIAL_IMAGES:
+        return f"data:image/webp;base64,{MATERIAL_IMAGES[mat]}"
+    return None
 
 def create_slot_content(mat, idx, disabled=False, on_cooldown=False, colors=None):
     if colors is None:
         colors = THEMES["light"]
     if mat:
-        img = ft.Image(src=f"materials/{mat}.webp", width=46, height=46)
-        content = img
+        src = get_image_src(mat)
+        if src:
+            img = ft.Image(src=src, width=46, height=46)
+            content = img
+        else:
+            content = ft.Text("?", size=16, color=colors["HINT"])
     else:
         content = ft.Text(str(idx + 1), size=12, color=colors["HINT"])
 
@@ -113,11 +146,30 @@ def create_slot_content(mat, idx, disabled=False, on_cooldown=False, colors=None
     elif on_cooldown:
         bgcolor = ft.Colors.with_opacity(0.2, colors["PRIMARY"])
 
-    return ft.Container(width=60, height=60, border_radius=BORDER_RADIUS, bgcolor=bgcolor, border=border, alignment=ft.alignment.Alignment(0, 0), content=content, tooltip=(MATERIAL_INFO.get(mat, "") + " (Disabled)" if disabled else MATERIAL_INFO.get(mat, "") + " (On Cooldown)" if on_cooldown else MATERIAL_INFO.get(mat, "")) if mat else f"Slot {idx + 1}")
+    tooltip_text = ""
+    if mat:
+        base = MATERIAL_INFO.get(mat, "")
+        if disabled:
+            tooltip_text = base + " (Disabled)"
+        elif on_cooldown:
+            tooltip_text = base + " (On Cooldown)"
+        else:
+            tooltip_text = base
+    else:
+        tooltip_text = f"Slot {idx + 1}"
 
+    return ft.Container(
+        width=60,
+        height=60,
+        border_radius=BORDER_RADIUS,
+        bgcolor=bgcolor,
+        border=border,
+        alignment=ft.alignment.Alignment(0, 0),
+        content=content,
+        tooltip=tooltip_text
+    )
 
-SETTINGS_PATH = Path.home() / "Documents" / "MacroFox" / "settings.json"
-
+SETTINGS_PATH = Path.home() / "Documents" / "MacroFox" / "Settings" / "settings.json"
 
 def load_settings():
     SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -132,11 +184,33 @@ def load_settings():
             pass
     return {"theme": "light", "always_on_top": False}
 
-
 def save_settings(data):
     with open(SETTINGS_PATH, "w") as f:
         json.dump(data, f, indent=2)
 
+# --- Custom Timer Handling ---
+CUSTOM_TIMER_PATH = Path.home() / "Documents" / "MacroFox" / "Settings" / "custom_timers.json"
+
+def load_custom_timers():
+    CUSTOM_TIMER_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if CUSTOM_TIMER_PATH.exists():
+        try:
+            with open(CUSTOM_TIMER_PATH, "r") as f:
+                data = json.load(f)
+                return {
+                    k: v for k, v in data.items()
+                    if k in MATERIAL_TIMER and isinstance(v, int) and v > 0
+                }
+        except:
+            pass
+    return {}
+
+def save_custom_timers(data):
+    with open(CUSTOM_TIMER_PATH, "w") as f:
+        json.dump(data, f, indent=2)
+
+custom_timers = load_custom_timers()
+EFFECTIVE_MATERIAL_TIMER = {k: custom_timers.get(k, v) for k, v in MATERIAL_TIMER.items()}
 
 # --- Main App ---
 def main(page: ft.Page):
@@ -144,7 +218,8 @@ def main(page: ft.Page):
     current_theme = settings.get("theme", "light")
     always_on_top = settings.get("always_on_top", False)
 
-    page.window.icon = "icon.ico"
+    if APP_ICON_B64:
+        page.window.icon = f"data:image/png;base64,{APP_ICON_B64}"
     page.title = "MacroFox"
     page.window.width = 820
     page.window.height = 480
@@ -179,14 +254,12 @@ def main(page: ft.Page):
     stop_btn_ref = ft.Ref[ft.Button]()
     settings_btn_ref = ft.Ref[ft.Button]()
 
-    preset_dir = Path.home() / "Documents" / "MacroFox"
+    preset_dir = Path.home() / "Documents" / "MacroFox" / "Preset"
     preset_dir.mkdir(parents=True, exist_ok=True)
 
-    # Helper to get current colors
     def get_colors():
         return THEMES[current_theme]
 
-    # Apply theme function — updates EVERYTHING
     def apply_theme(theme_name):
         nonlocal current_theme
         current_theme = theme_name
@@ -194,11 +267,9 @@ def main(page: ft.Page):
         page.theme_mode = colors["THEME_MODE"]
         page.bgcolor = colors["BG"]
 
-        # Update all slot displays
         for i in range(7):
             update_slot_display(i)
 
-        # Update panel backgrounds
         if left_panel_ref.current:
             left_panel_ref.current.bgcolor = colors["PANEL"]
         if hotbar_container_ref.current:
@@ -208,46 +279,62 @@ def main(page: ft.Page):
         if controls_container_ref.current:
             controls_container_ref.current.bgcolor = colors["PANEL"]
 
-        # Update dropdown
         if preset_dropdown_ref.current:
             preset_dropdown_ref.current.bgcolor = colors["BG"]
             preset_dropdown_ref.current.color = colors["FONT"]
 
-        # Rebuild material list
         material_list.controls.clear()
         for mat in MATERIALS:
-            draggable = ft.Draggable(content=ft.Container(padding=8, border_radius=BORDER_RADIUS, bgcolor=colors["BG"], content=ft.Row([ft.Image(src=f"materials/{mat}.webp", width=70, height=70), ft.Column([ft.Text(mat.replace("_", " "), size=16, weight="bold", color=colors["FONT"]), ft.Text(MATERIAL_INFO[mat], size=10, color=colors["HINT"], width=160)], spacing=2, expand=True)], spacing=10, vertical_alignment=ft.CrossAxisAlignment.START), tooltip=MATERIAL_INFO[mat]), data=mat)
+            src = get_image_src(mat)
+            img_widget = ft.Image(src=src, width=70, height=70) if src else ft.Text("?", size=24)
+            draggable = ft.Draggable(
+                content=ft.Container(
+                    padding=8,
+                    border_radius=BORDER_RADIUS,
+                    bgcolor=colors["BG"],
+                    content=ft.Row([
+                        img_widget,
+                        ft.Column([
+                            ft.Text(mat.replace("_", " "), size=16, weight="bold", color=colors["FONT"]),
+                            ft.Text(MATERIAL_INFO[mat], size=10, color=colors["HINT"], width=160)
+                        ], spacing=2, expand=True)
+                    ], spacing=10, vertical_alignment=ft.CrossAxisAlignment.START),
+                    tooltip=MATERIAL_INFO[mat]
+                ),
+                data=mat
+            )
             material_list.controls.append(draggable)
 
-        # Update ALL buttons
-        if apply_preset_btn_ref.current:
-            apply_preset_btn_ref.current.style.bgcolor = colors["PRIMARY"]
-            apply_preset_btn_ref.current.update()
-        if save_preset_btn_ref.current:
-            save_preset_btn_ref.current.style.bgcolor = colors["PRIMARY"]
-            save_preset_btn_ref.current.update()
-        if run_pause_btn_ref.current:
-            if not running:
-                run_pause_btn_ref.current.style.bgcolor = colors["SUCCESS"]
-                run_pause_btn_ref.current.content = ft.Icon(ft.Icons.PLAY_ARROW, size=20, color="#FFFFFF")
-            elif pause_flag:
-                run_pause_btn_ref.current.style.bgcolor = colors["SLOT_BG"]
-                run_pause_btn_ref.current.content = ft.Icon(ft.Icons.PLAY_ARROW, size=20, color=colors["FONT"])
-            else:
-                run_pause_btn_ref.current.style.bgcolor = colors["WARNING"]
-                run_pause_btn_ref.current.content = ft.Icon(ft.Icons.PAUSE, size=20, color="#FFFFFF")
-            run_pause_btn_ref.current.update()
-        if stop_btn_ref.current:
-            stop_btn_ref.current.style.bgcolor = colors["DANGER"]
-            stop_btn_ref.current.update()
-        if settings_btn_ref.current:
-            grey = ft.Colors.GREY_700 if theme_name != "nothing" else ft.Colors.GREY_900
-            settings_btn_ref.current.style.bgcolor = grey
-            settings_btn_ref.current.update()
+        # Update buttons
+        btn_refs_and_icons = [
+            (apply_preset_btn_ref, ft.Icons.ARROW_OUTWARD_ROUNDED, "Apply preset"),
+            (save_preset_btn_ref, ft.Icons.SAVE, "Save Preset"),
+            (run_pause_btn_ref, None, "Start/Pause"),
+            (stop_btn_ref, ft.Icons.STOP, "Stop"),
+            (settings_btn_ref, ft.Icons.SETTINGS, "Settings")
+        ]
+
+        for ref, icon, tooltip in btn_refs_and_icons:
+            if ref.current:
+                if ref == run_pause_btn_ref:
+                    if not running:
+                        ref.current.style.bgcolor = colors["SUCCESS"]
+                        ref.current.content = ft.Icon(ft.Icons.PLAY_ARROW, size=20, color="#FFFFFF")
+                    elif pause_flag:
+                        ref.current.style.bgcolor = colors["SLOT_BG"]
+                        ref.current.content = ft.Icon(ft.Icons.PLAY_ARROW, size=20, color=colors["FONT"])
+                    else:
+                        ref.current.style.bgcolor = colors["WARNING"]
+                        ref.current.content = ft.Icon(ft.Icons.PAUSE, size=20, color="#FFFFFF")
+                elif ref == settings_btn_ref:
+                    grey = ft.Colors.GREY_700 if theme_name != "nothing" else ft.Colors.GREY_900
+                    ref.current.style.bgcolor = grey
+                else:
+                    ref.current.style.bgcolor = colors["PRIMARY"]
+                ref.current.update()
 
         page.update()
 
-    # Slot display logic
     def update_slot_display(idx):
         colors = get_colors()
         mat = slots[idx]
@@ -255,10 +342,22 @@ def main(page: ft.Page):
         on_cooldown = slot_cooldown_end[idx] > time.time()
 
         if mat is None:
-            new_control = ft.DragTarget(content=create_slot_content(None, idx, disabled, on_cooldown, colors), data=str(idx), on_accept=lambda e, i=idx: on_slot_drop(e, i))
+            new_control = ft.DragTarget(
+                content=create_slot_content(None, idx, disabled, on_cooldown, colors),
+                data=str(idx),
+                on_accept=lambda e, i=idx: on_slot_drop(e, i)
+            )
         else:
-            inner = ft.Container(content=create_slot_content(mat, idx, disabled, on_cooldown, colors), on_click=lambda e, i=idx: toggle_slot_disabled(i), on_long_press=lambda e, i=idx: clear_slot(i))
-            new_control = ft.Draggable(content=inner, data=mat, on_drag_complete=lambda e, i=idx: on_item_dragged_out(i))
+            inner = ft.Container(
+                content=create_slot_content(mat, idx, disabled, on_cooldown, colors),
+                on_click=lambda e, i=idx: toggle_slot_disabled(i),
+                on_long_press=lambda e, i=idx: clear_slot(i)
+            )
+            new_control = ft.Draggable(
+                content=inner,
+                data=mat,
+                on_drag_complete=lambda e, i=idx: on_item_dragged_out(i)
+            )
         slot_containers[idx].content = new_control
 
         remaining = max(0, slot_cooldown_end[idx] - time.time())
@@ -338,11 +437,18 @@ def main(page: ft.Page):
     # Build initial UI
     for i in range(7):
         timer_texts.append(ft.Text("–:–", size=12))
-        drag_target = ft.DragTarget(content=create_slot_content(None, i, False, False, THEMES[current_theme]), data=str(i), on_accept=lambda e, idx=i: on_slot_drop(e, idx))
+        drag_target = ft.DragTarget(
+            content=create_slot_content(None, i, False, False, THEMES[current_theme]),
+            data=str(i),
+            on_accept=lambda e, idx=i: on_slot_drop(e, idx)
+        )
         container = ft.Container(content=drag_target)
         slot_containers.append(container)
 
-    hotbar = ft.Row([ft.Column([slot_containers[i], timer_texts[i]], spacing=4, alignment=ft.MainAxisAlignment.CENTER) for i in range(7)], spacing=8, alignment=ft.MainAxisAlignment.CENTER)
+    hotbar = ft.Row([
+        ft.Column([slot_containers[i], timer_texts[i]], spacing=4, alignment=ft.MainAxisAlignment.CENTER)
+        for i in range(7)
+    ], spacing=8, alignment=ft.MainAxisAlignment.CENTER)
 
     material_list = ft.Column(spacing=6, scroll=ft.ScrollMode.AUTO, height=440)
 
@@ -362,11 +468,17 @@ def main(page: ft.Page):
         text_style=ft.TextStyle(size=15, weight="w500"),
     )
 
-    # Button creation helper
     def make_icon_button(icon, bgcolor, tooltip, on_click, ref):
-        return ft.Button(ref=ref, content=ft.Icon(icon, size=20, color="#FFFFFF"), width=BUTTON_HEIGHT, height=BUTTON_HEIGHT, on_click=on_click, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8), padding=0, bgcolor=bgcolor), tooltip=tooltip)
+        return ft.Button(
+            ref=ref,
+            content=ft.Icon(icon, size=20, color="#FFFFFF"),
+            width=BUTTON_HEIGHT,
+            height=BUTTON_HEIGHT,
+            on_click=on_click,
+            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8), padding=0, bgcolor=bgcolor),
+            tooltip=tooltip
+        )
 
-    # Macro logic
     def run_macro():
         nonlocal running, pause_flag
         running = True
@@ -387,7 +499,7 @@ def main(page: ft.Page):
                         continue
                     if current_time >= slot_cooldown_end[i]:
                         keyboard.press_and_release(str(i + 1))
-                        duration = MATERIAL_TIMER.get(mat, 1)
+                        duration = EFFECTIVE_MATERIAL_TIMER.get(mat, 1)
                         slot_cooldown_end[i] = current_time + duration
                         pressed_any = True
                 time.sleep(0.1 if pressed_any else 0.5)
@@ -442,39 +554,140 @@ def main(page: ft.Page):
 
     def open_settings(e):
         colors = get_colors()
-        always_on_top_setting = ft.Checkbox(label="Always on top", value=page.window.always_on_top, on_change=lambda ev: (setattr(page.window, "always_on_top", ev.control.value), save_settings({"theme": current_theme, "always_on_top": ev.control.value})), check_color="#FFFFFF", active_color=colors["PRIMARY"], label_style=ft.TextStyle(size=13, color=colors["FONT"]))
+
+        always_on_top_val = page.window.always_on_top
+        always_on_top_checkbox = ft.Checkbox(
+            label="Always on top",
+            value=always_on_top_val,
+            check_color="#FFFFFF",
+            active_color=colors["PRIMARY"],
+            label_style=ft.TextStyle(size=13, color=colors["FONT"])
+        )
 
         theme_names = ["light", "dark", "nothing", "pinky"]
         theme_index = theme_names.index(current_theme)
-
-        def on_theme_change(ev):
-            new_theme = theme_names[int(ev.data)]
-            apply_theme(new_theme)
-            save_settings({"theme": new_theme, "always_on_top": page.window.always_on_top})
-
         theme_selector = ft.CupertinoSlidingSegmentedButton(
             selected_index=theme_index,
             thumb_color=colors["PRIMARY"],
-            on_change=on_theme_change,
+            on_change=lambda ev: None,
             padding=ft.Padding.symmetric(vertical=4, horizontal=10),
-            controls=[
-                ft.Text("Light"),
-                ft.Text("Dark"),
-                ft.Text("Nothing"),
-                ft.Text("Pinky"),
-            ],
+            controls=[ft.Text(t.capitalize()) for t in theme_names],
         )
 
-        def close_dlg(_):
+        timer_fields = {}
+        timer_grid = ft.Column(spacing=6)
+
+        def chunks(lst, n):
+            for i in range(0, len(lst), n):
+                yield lst[i:i + n]
+
+        for row_mats in chunks(MATERIALS, 4):
+            row_items = []
+            for mat in row_mats:
+                current = EFFECTIVE_MATERIAL_TIMER.get(mat, MATERIAL_TIMER.get(mat, 1))
+                field = ft.TextField(
+                    value=str(current),
+                    width=70,
+                    height=32,
+                    text_align=ft.TextAlign.RIGHT,
+                    input_filter=ft.NumbersOnlyInputFilter(),
+                    border_radius=5,
+                    dense=True,
+                    content_padding=4,
+                    text_style=ft.TextStyle(size=11, color=colors["FONT"]),
+                    bgcolor=colors["BG"],
+                    border_color=colors["HINT"],
+                )
+                timer_fields[mat] = field
+                src = get_image_src(mat)
+                img_widget = ft.Image(src=src, width=28, height=28) if src else ft.Text("?", size=16)
+                row_items.append(
+                    ft.Container(
+                        ft.Column([
+                            img_widget,
+                            field,
+                        ], spacing=2, alignment=ft.MainAxisAlignment.CENTER,
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                        width=80,
+                        alignment=ft.alignment.Alignment(0, 0),
+                    )
+                )
+            while len(row_items) < 4:
+                row_items.append(ft.Container(width=80))
+            timer_grid.controls.append(ft.Row(row_items, spacing=8, alignment=ft.MainAxisAlignment.START))
+
+        def save_and_close(_):
+            new_always_on_top = always_on_top_checkbox.value
+            new_theme = theme_names[theme_selector.selected_index]
+            setattr(page.window, "always_on_top", new_always_on_top)
+            save_settings({"theme": new_theme, "always_on_top": new_always_on_top})
+            if new_theme != current_theme:
+                apply_theme(new_theme)
+
+            new_timer_data = {}
+            for mat, field in timer_fields.items():
+                try:
+                    val = int(field.value)
+                    if val > 0:
+                        new_timer_data[mat] = val
+                except ValueError:
+                    pass
+            save_custom_timers(new_timer_data)
+            global custom_timers, EFFECTIVE_MATERIAL_TIMER
+            custom_timers = load_custom_timers()
+            EFFECTIVE_MATERIAL_TIMER = {k: custom_timers.get(k, v) for k, v in MATERIAL_TIMER.items()}
+
             page.pop_dialog()
+            page.snack_bar = ft.SnackBar(ft.Text("Settings saved!"), bgcolor=colors["SUCCESS"])
+            page.snack_bar.open = True
+            page.update()
 
-        close_btn = ft.Button("Close", on_click=close_dlg, height=36, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=6), bgcolor=colors["PRIMARY"], color="#FFFFFF"))
+        def reset_timers(_):
+            for mat, field in timer_fields.items():
+                field.value = str(MATERIAL_TIMER.get(mat, 1))
+            page.update()
 
-        settings_content = ft.Column([ft.Row([ft.Text("Settings", size=18, weight="bold", color=colors["FONT"])], alignment=ft.MainAxisAlignment.CENTER), ft.Divider(height=12, color=colors["SLOT_BG"]), always_on_top_setting, ft.Row([ft.Text("Theme:", size=13, color=colors["FONT"]), theme_selector], alignment=ft.MainAxisAlignment.START), ft.Divider(height=16, color=ft.Colors.TRANSPARENT), ft.Row([close_btn], alignment=ft.MainAxisAlignment.CENTER)], spacing=8, tight=True)
+        reset_btn = ft.Button(
+            "Reset Timers", on_click=reset_timers,
+            height=30, style=ft.ButtonStyle(bgcolor=colors["SLOT_BG"], color=colors["FONT"],
+                                            shape=ft.RoundedRectangleBorder(radius=6))
+        )
 
-        settings_dialog = ft.AlertDialog(content=settings_content, content_padding=8, scrollable=True, shape=ft.RoundedRectangleBorder(radius=8), bgcolor=colors["BG"])
+        save_close_btn = ft.Button(
+            "Save & Close", on_click=save_and_close,
+            height=36,
+            style=ft.ButtonStyle(bgcolor=colors["PRIMARY"], color="#FFFFFF", shape=ft.RoundedRectangleBorder(radius=6))
+        )
 
-        page.show_dialog(settings_dialog)
+        settings_content = ft.Column([
+            ft.Row(
+                [
+                    ft.Text("⚙️ Settings", size=18, weight="bold", color=colors["FONT"]),
+                    save_close_btn,
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            ft.Divider(height=12, color=colors["SLOT_BG"]),
+            always_on_top_checkbox,
+            ft.Row([ft.Text("Theme:", size=13, color=colors["FONT"]), theme_selector],
+                   alignment=ft.MainAxisAlignment.START),
+            ft.Divider(height=16, color=ft.Colors.TRANSPARENT),
+            ft.Row([
+                ft.Text("Material Cooldowns (sec)", size=14, weight="bold", color=colors["FONT"]),
+                reset_btn
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+            ft.Container(timer_grid, padding=ft.Padding.only(top=6)),
+            ft.Divider(height=16, color=ft.Colors.TRANSPARENT),
+        ], spacing=10, tight=True, scroll=ft.ScrollMode.AUTO, height=520)
+
+        dialog = ft.AlertDialog(
+            content=settings_content,
+            content_padding=12,
+            shape=ft.RoundedRectangleBorder(radius=10),
+            bgcolor=colors["PANEL"]
+        )
+        page.show_dialog(dialog)
 
     def apply_preset(e):
         name = preset_dropdown.value
@@ -532,7 +745,12 @@ def main(page: ft.Page):
         save_btn = ft.Button("Save", on_click=confirm_save, height=36, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=6), bgcolor=colors["PRIMARY"], color="#FFFFFF"))
         cancel_btn = ft.Button("Cancel", on_click=close_dlg, height=36, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=6), bgcolor=colors["SLOT_BG"], color=colors["FONT"]))
 
-        save_content = ft.Column([ft.Row([ft.Text("Save Preset", size=18, weight="bold", color=colors["FONT"])], alignment=ft.MainAxisAlignment.CENTER), ft.Divider(height=12, color=colors["SLOT_BG"]), ft.Row([preset_name_field], alignment=ft.MainAxisAlignment.CENTER), ft.Row([cancel_btn, save_btn], alignment=ft.MainAxisAlignment.CENTER)], spacing=8, tight=True)
+        save_content = ft.Column([
+            ft.Row([ft.Text("Save Preset", size=18, weight="bold", color=colors["FONT"])], alignment=ft.MainAxisAlignment.CENTER),
+            ft.Divider(height=12, color=colors["SLOT_BG"]),
+            ft.Row([preset_name_field], alignment=ft.MainAxisAlignment.CENTER),
+            ft.Row([cancel_btn, save_btn], alignment=ft.MainAxisAlignment.CENTER)
+        ], spacing=8, tight=True)
 
         save_dialog = ft.AlertDialog(content=save_content, content_padding=8, scrollable=False, shape=ft.RoundedRectangleBorder(radius=8), bgcolor=colors["BG"])
         page.show_dialog(save_dialog)
@@ -543,7 +761,7 @@ def main(page: ft.Page):
             options.append(ft.dropdown.Option(file.stem))
         preset_dropdown.options = options
 
-    # Create buttons with refs
+    # Create buttons
     apply_preset_btn = make_icon_button(ft.Icons.ARROW_OUTWARD_ROUNDED, THEMES[current_theme]["PRIMARY"], "Apply preset", apply_preset, apply_preset_btn_ref)
     save_preset_btn = make_icon_button(ft.Icons.SAVE, THEMES[current_theme]["PRIMARY"], "Save Preset", save_preset, save_preset_btn_ref)
     run_pause_btn = make_icon_button(ft.Icons.PLAY_ARROW, THEMES[current_theme]["SUCCESS"], "Start/Pause", on_toggle_run_pause, run_pause_btn_ref)
@@ -558,24 +776,47 @@ def main(page: ft.Page):
 
     page.on_window_event = on_window_event
 
-    # Layout
     hotbar_container = ft.Container(ref=hotbar_container_ref, content=hotbar, padding=10, border_radius=8, margin=ft.margin.Margin(top=0, left=0, right=0, bottom=8))
 
     info_container = ft.Container(
         ref=info_container_ref,
-        content=ft.Column(
-            [
-                ft.Row(
-                    [
-                        ft.Container(content=ft.Text("🚫 Long-press slot to clear\n💡 Single-click slot to disable it\n📁 All save files are stored at \nC:\Documents\MacroFox", size=11, color=THEMES[current_theme]["HINT"]), expand=True),
-                        ft.Container(content=ft.Text("🦊 MacroFox v1.0\n\nThis macro is designed specifically for boosting by automating hotbar items usage", size=11, color=THEMES[current_theme]["HINT"]), expand=True),
-                    ],
-                    spacing=8,
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        content=ft.Column([
+            ft.Row([
+                ft.Container(
+                    content=ft.Text(
+                        "🚫 Long-press slot to clear\n💡 Single-click slot to disable it\n📁 All save files are stored at \nC:\\Documents\\MacroFox",
+                        size=11,
+                        color=THEMES[current_theme]["HINT"]
+                    ),
+                    expand=True
                 ),
-            ],
-            spacing=8,
-        ),
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("🦊 MacroFox v1.1", size=11, weight=ft.FontWeight.BOLD, color=THEMES[current_theme]["HINT"]),
+                        ft.Text("This macro is designed specifically for boosting by automating hotbar items usage\n", size=11, color=THEMES[current_theme]["HINT"]),
+                        ft.Text("Update Log:", size=11, weight=ft.FontWeight.BOLD, color=THEMES[current_theme]["HINT"]),
+                        ft.Container(
+                            content=ft.ListView(
+                                controls=[
+                                    ft.Text("• Materials now matching in-game inventory sorting", size=11, color=THEMES[current_theme]["HINT"]),
+                                    ft.Text("• Added new items (Snowflake, Red and Blue Extracts, Tropical Drink)", size=11, color=THEMES[current_theme]["HINT"]),
+                                    ft.Text("• Removed Micro-Converter", size=11, color=THEMES[current_theme]["HINT"]),
+                                    ft.Text("• You can customize Materials timer in settings.", size=11, color=THEMES[current_theme]["HINT"]),
+                                    ft.Text("• Now settings will not apply until you press save button", size=11, color=THEMES[current_theme]["HINT"]),
+                                    ft.Text("• Fixed image loading in single-file EXE", size=11, color=THEMES[current_theme]["HINT"]),
+                                ],
+                                auto_scroll=False,
+                                padding=0,
+                                spacing=2,
+                            ),
+                            height=80,
+                            expand=False,
+                        ),
+                    ], spacing=4),
+                    expand=True,
+                ),
+            ], spacing=8, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+        ], spacing=8),
         padding=10,
         border_radius=8,
         height=220,
@@ -593,19 +834,14 @@ def main(page: ft.Page):
     left_panel = ft.Container(ref=left_panel_ref, content=material_list, padding=6, border_radius=8, expand=False, width=280)
 
     page.add(
-        ft.Column(
-            [
-                ft.Row([left_panel, ft.Column([hotbar_container, info_container, controls_container], expand=True, spacing=4)], expand=True, spacing=12),
-            ],
-            expand=True,
-            spacing=0,
-        )
+        ft.Column([
+            ft.Row([left_panel, ft.Column([hotbar_container, info_container, controls_container], expand=True, spacing=4)], expand=True, spacing=12),
+        ], expand=True, spacing=0)
     )
 
-    # Initialize
     apply_theme(current_theme)
     load_presets()
     page.update()
 
-
-ft.run(main, assets_dir="materials")
+# Run without assets_dir since we embed everything
+ft.run(main)
