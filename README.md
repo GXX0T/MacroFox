@@ -15,11 +15,11 @@
 - Settings saved between runs
 
 ## Installation
-1. Download [`MacroFox.exe`](https://github.com/GXX0T/MacroFox/releases/tag/1.0)
+1. Download latest [`MacroFox.exe`](https://github.com/GXX0T/MacroFox/releases) from releases page
 2. Run `MacroFox.exe`
 
 > [!WARNING]
-> This is beta-version. Please report any bug you find
+> Please report any bug you find by opening an issue
 
 ## Building
 <details>
