@@ -6,209 +6,26 @@ from flet_timer import Timer
 import json
 from pathlib import Path
 
-# --- EMBEDDED ASSETS ---
-from assets_b64 import MATERIAL_IMAGES, APP_ICON_B64
+# try:
+#     from precise_tracker import PrecisionTracker
+#     PRECISION_TRACKING_AVAILABLE = True
+# except Exception:
+#     PRECISION_TRACKING_AVAILABLE = False
 
-# --- Constants ---
-MATERIALS = ["Sprinkler_Builder", "Gumdrops", "Coconut", "Stinger", "Snowflake", "Jelly_Beans", "Red_Extract", "Blue_Extract", "Glitter", "Glue", "Oil", "Enzymes", "Tropical_Drink", "Purple_Potion", "Super_Smoothie", "Marshmallow_Bee", "Magic_Bean"]
+from constants import (
+    MATERIALS, MATERIAL_INFO, MATERIAL_TIMER, PRESETS, THEMES, BORDER_RADIUS,
+    APP_VERSION, UPDATE_LOG, APP_TIPS
+)
+from utils import format_time, load_settings, save_settings, load_custom_timers, save_custom_timers
+from ui_components import get_image_src, create_slot_content, make_icon_button
+# from assets_b64 import APP_ICON_B64
 
-MATERIAL_INFO = {
-    "Blue_Extract": "Grants x1.25 Blue Pollen for 10 minutes.",
-    "Cloud_Vial": "Summons a Cloud in the field you're standing in. Lasts for 3 minutes.",
-    "Coconut": "Drops a huge Coconut into the field. Catch it to convert pollen to Honey Tokens.",
-    "Enzymes": "Grants +10% Instant Conversion and x1.25 Conversion Rate for 10 minutes.",
-    "Glitter": "Boosts the field you're standing in, granting +100% pollen for 15 minutes.",
-    "Glue": "Grants x1.25 Bee Gather Pollen and Tools for 10 minutes.",
-    "Gumdrops": "Use while standing in a field to cover flowers in goo. Goo grants bonus honey.",
-    "Jelly_Beans": "Scatters various buff-granting beans on nearby flowers. Works best when shared.",
-    "Magic_Bean": "Plants a random Sprout in the field you're standing in.",
-    "Marshmallow_Bee": "50% White Pollen, +50% Capacity, and +250% Conversion Rate for 30 minutes.",
-    "Micro-Converter": "Instantly converts all Pollen in your bag to Honey.",
-    "Oil": "Grants x1.2 Bee and Player Movespeed for 10 minutes.",
-    "Purple_Potion": "Grants x1.25 Capacity, x1.25 Convert Rate At Hive, x1.5 Red Pollen, x1.5 Blue Pollen, x1.3 Bee Gather Pollen, and x1.3 Pollen From Tools for 15 minutes.",
-    "Red_Extract": "Grants x1.25 Red Pollen for 10 minutes.",
-    "Snowflake": "Sends a cool, soothing breeze to all the players on the server (Melts after Beesmas!)",
-    "Sprinkler_Builder": "Use while standing in flowers to place a Sprinkler.",
-    "Stinger": "Grants your bees x1.5 attack for 30 seconds.",
-    "Super_Smoothie": "Grants x1.5 Capacity, x1.6 Red Pollen, x1.6 Blue Pollen, x1.6 White Pollen, x1.4 Bee Gather Pollen, x1.4 Pollen From Tools, x2 Convert Rate, x1.5 Convert Rate At Hive, +12% Instant Conversion, +7% Critical Chance, x1.25 Bee Movespeed, and x1.25 Player Movespeed for 20 minutes.",
-    "Tropical_Drink": "Grants x1.25 White Pollen and +5% Critical Chance for 10 minutes.",
-}
-
-MATERIAL_TIMER = {
-    "Blue_Extract": 600,
-    "Cloud_Vial": 180,
-    "Coconut": 1,
-    "Enzymes": 600,
-    "Glitter": 910,
-    "Glue": 600,
-    "Gumdrops": 1,
-    "Jelly_Beans": 45,
-    "Magic_Bean": 1,
-    "Marshmallow_Bee": 1800,
-    "Micro-Converter": 15,
-    "Oil": 600,
-    "Purple_Potion": 900,
-    "Red_Extract": 600,
-    "Snowflake": 1,
-    "Sprinkler_Builder": 5,
-    "Stinger": 10,
-    "Super_Smoothie": 1200,
-    "Tropical_Drink": 600,
-}
-
-PRESETS = {
-    "Boost": ["Sprinkler_Builder", "Stinger", "Coconut", "Jelly_Beans", "Gumdrops", "Super_Smoothie", "Glitter"],
-}
-
-# --- Theme Palettes ---
-THEMES = {
-    "light": {
-        "BG": "#FFFFFF",
-        "PANEL": "#F0F0F0",
-        "SLOT_BG": "#E0E0E0",
-        "FONT": "#212121",
-        "PRIMARY": "#2196F3",
-        "SUCCESS": "#73C277",
-        "DANGER": "#F55A4E",
-        "WARNING": "#FFC107",
-        "HINT": "#616161",
-        "THEME_MODE": ft.ThemeMode.LIGHT,
-    },
-    "dark": {
-        "BG": "#121212",
-        "PANEL": "#1E1E1E",
-        "SLOT_BG": "#2A2A2A",
-        "FONT": "#E0E0E0",
-        "PRIMARY": "#4CAF50",
-        "SUCCESS": "#66BB6A",
-        "DANGER": "#EF5350",
-        "WARNING": "#FFA726",
-        "HINT": "#9E9E9E",
-        "THEME_MODE": ft.ThemeMode.DARK,
-    },
-    "nothing": {
-        "BG": "#000000",
-        "PANEL": "#111111",
-        "SLOT_BG": "#222222",
-        "FONT": "#FFFFFF",
-        "PRIMARY": "#D71922",
-        "SUCCESS": "#2ECC71",
-        "DANGER": "#E74C3C",
-        "WARNING": "#F39C12",
-        "HINT": "#AAAAAA",
-        "THEME_MODE": ft.ThemeMode.DARK,
-    },
-    "pinky": {
-        "BG": "#FFF9FB",
-        "PANEL": "#FFE8F0",
-        "SLOT_BG": "#FFDDEA",
-        "FONT": "#C2185B",
-        "PRIMARY": "#F06292",
-        "SUCCESS": "#81C784",
-        "DANGER": "#F48FB1",
-        "WARNING": "#FFCC80",
-        "HINT": "#CE93D8",
-        "THEME_MODE": ft.ThemeMode.LIGHT,
-    },
-}
-
-BORDER_RADIUS = 6
-
-def format_time(seconds):
-    m = int(seconds) // 60
-    s = int(seconds) % 60
-    return f"{m:02d}:{s:02d}"
-
-def get_image_src(mat):
-    """Return base64 image URI for Flet"""
-    if mat in MATERIAL_IMAGES:
-        return f"data:image/webp;base64,{MATERIAL_IMAGES[mat]}"
-    return None
-
-def create_slot_content(mat, idx, disabled=False, on_cooldown=False, colors=None):
-    if colors is None:
-        colors = THEMES["light"]
-    if mat:
-        src = get_image_src(mat)
-        if src:
-            img = ft.Image(src=src, width=46, height=46)
-            content = img
-        else:
-            content = ft.Text("?", size=16, color=colors["HINT"])
-    else:
-        content = ft.Text(str(idx + 1), size=12, color=colors["HINT"])
-
-    bgcolor = colors["SLOT_BG"]
-    border = None
-    if disabled:
-        bgcolor = ft.Colors.with_opacity(0.2, colors["DANGER"])
-        border = ft.Border.all(2, colors["DANGER"])
-    elif on_cooldown:
-        bgcolor = ft.Colors.with_opacity(0.2, colors["PRIMARY"])
-
-    tooltip_text = ""
-    if mat:
-        base = MATERIAL_INFO.get(mat, "")
-        if disabled:
-            tooltip_text = base + " (Disabled)"
-        elif on_cooldown:
-            tooltip_text = base + " (On Cooldown)"
-        else:
-            tooltip_text = base
-    else:
-        tooltip_text = f"Slot {idx + 1}"
-
-    return ft.Container(
-        width=60,
-        height=60,
-        border_radius=BORDER_RADIUS,
-        bgcolor=bgcolor,
-        border=border,
-        alignment=ft.alignment.Alignment(0, 0),
-        content=content,
-        tooltip=tooltip_text
-    )
-
+# --- Paths ---
 SETTINGS_PATH = Path.home() / "Documents" / "MacroFox" / "Settings" / "settings.json"
-
-def load_settings():
-    SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if SETTINGS_PATH.exists():
-        try:
-            with open(SETTINGS_PATH, "r") as f:
-                data = json.load(f)
-                if data.get("theme") not in THEMES:
-                    data["theme"] = "light"
-                return data
-        except:
-            pass
-    return {"theme": "light", "always_on_top": False}
-
-def save_settings(data):
-    with open(SETTINGS_PATH, "w") as f:
-        json.dump(data, f, indent=2)
-
-# --- Custom Timer Handling ---
 CUSTOM_TIMER_PATH = Path.home() / "Documents" / "MacroFox" / "Settings" / "custom_timers.json"
+preset_dir = Path.home() / "Documents" / "MacroFox" / "Preset"
 
-def load_custom_timers():
-    CUSTOM_TIMER_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if CUSTOM_TIMER_PATH.exists():
-        try:
-            with open(CUSTOM_TIMER_PATH, "r") as f:
-                data = json.load(f)
-                return {
-                    k: v for k, v in data.items()
-                    if k in MATERIAL_TIMER and isinstance(v, int) and v > 0
-                }
-        except:
-            pass
-    return {}
-
-def save_custom_timers(data):
-    with open(CUSTOM_TIMER_PATH, "w") as f:
-        json.dump(data, f, indent=2)
-
+# --- Load timers ---
 custom_timers = load_custom_timers()
 EFFECTIVE_MATERIAL_TIMER = {k: custom_timers.get(k, v) for k, v in MATERIAL_TIMER.items()}
 
@@ -217,9 +34,10 @@ def main(page: ft.Page):
     settings = load_settings()
     current_theme = settings.get("theme", "light")
     always_on_top = settings.get("always_on_top", False)
+    # track_precision = settings.get("track_precision", False) and PRECISION_TRACKING_AVAILABLE
+    # precision_interval = settings.get("precision_interval", 0.25)
 
-    if APP_ICON_B64:
-        page.window.icon = f"data:image/png;base64,{APP_ICON_B64}"
+    page.window.icon = "icon.ico"
     page.title = "MacroFox"
     page.window.width = 820
     page.window.height = 480
@@ -237,6 +55,7 @@ def main(page: ft.Page):
     material_to_slot = {}
     running = False
     pause_flag = False
+    precision_tracker = None
 
     # UI refs
     timer_texts = []
@@ -247,24 +66,53 @@ def main(page: ft.Page):
     controls_container_ref = ft.Ref[ft.Container]()
     preset_dropdown_ref = ft.Ref[ft.Dropdown]()
 
-    # Button refs
     apply_preset_btn_ref = ft.Ref[ft.Button]()
     save_preset_btn_ref = ft.Ref[ft.Button]()
     run_pause_btn_ref = ft.Ref[ft.Button]()
     stop_btn_ref = ft.Ref[ft.Button]()
     settings_btn_ref = ft.Ref[ft.Button]()
 
-    preset_dir = Path.home() / "Documents" / "MacroFox" / "Preset"
     preset_dir.mkdir(parents=True, exist_ok=True)
 
     def get_colors():
         return THEMES[current_theme]
+    # --- WIP ---
+    # def _start_precision_tracker():
+    #     nonlocal precision_tracker
+    #     if not PRECISION_TRACKING_AVAILABLE or not track_precision:
+    #         return
+    #     if precision_tracker is None:
+    #         def on_warn(remaining):
+    #             page.snack_bar = ft.SnackBar(
+    #                 ft.Text(f"Precision expires in {int(remaining)}s!"),
+    #                 bgcolor=get_colors()["WARNING"]
+    #             )
+    #             page.snack_bar.open = True
+    #             page.update()
+    #
+    #         threshold = 0.9 - (precision_interval - 0.25) * (0.05 / 0.75)
+    #         threshold = max(0.90, min(0.975, threshold))
+    #
+    #         precision_tracker = PrecisionTracker(
+    #             callback_on_expire=on_warn,
+    #             check_interval=precision_interval,
+    #             # match_threshold=threshold
+    #         )
+    #         precision_tracker.start()
+    #         print(f"[Main] Started PrecisionTracker @ {precision_interval}s, threshold={threshold:.3f}")
+
+    # def _stop_precision_tracker():
+    #     nonlocal precision_tracker
+    #     if precision_tracker:
+    #         precision_tracker.stop()
+    #         precision_tracker = None
+    #         print("[Main] Stopped PrecisionTracker")
 
     def apply_theme(theme_name):
         nonlocal current_theme
         current_theme = theme_name
         colors = THEMES[theme_name]
-        page.theme_mode = colors["THEME_MODE"]
+        page.theme_mode = ft.ThemeMode.LIGHT if colors["THEME_MODE"] == "light" else ft.ThemeMode.DARK
         page.bgcolor = colors["BG"]
 
         for i in range(7):
@@ -305,7 +153,6 @@ def main(page: ft.Page):
             )
             material_list.controls.append(draggable)
 
-        # Update buttons
         btn_refs_and_icons = [
             (apply_preset_btn_ref, ft.Icons.ARROW_OUTWARD_ROUNDED, "Apply preset"),
             (save_preset_btn_ref, ft.Icons.SAVE, "Save Preset"),
@@ -468,23 +315,14 @@ def main(page: ft.Page):
         text_style=ft.TextStyle(size=15, weight="w500"),
     )
 
-    def make_icon_button(icon, bgcolor, tooltip, on_click, ref):
-        return ft.Button(
-            ref=ref,
-            content=ft.Icon(icon, size=20, color="#FFFFFF"),
-            width=BUTTON_HEIGHT,
-            height=BUTTON_HEIGHT,
-            on_click=on_click,
-            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8), padding=0, bgcolor=bgcolor),
-            tooltip=tooltip
-        )
-
     def run_macro():
         nonlocal running, pause_flag
         running = True
         pause_flag = False
         time.sleep(1.0)
         try:
+            # if PRECISION_TRACKING_AVAILABLE and track_precision:
+            #     _start_precision_tracker()
             while running:
                 if pause_flag:
                     time.sleep(0.1)
@@ -506,6 +344,7 @@ def main(page: ft.Page):
         finally:
             running = False
             pause_flag = False
+            # _stop_precision_tracker()
 
     def ui_update_callback():
         colors = get_colors()
@@ -520,6 +359,52 @@ def main(page: ft.Page):
             pass
 
     ui_timer = Timer(callback=ui_update_callback, interval=0.1)
+
+    # --- Hotkeys ---
+    def start_macro_hotkey():
+        nonlocal running, pause_flag
+        if not running:
+            threading.Thread(target=run_macro, daemon=True).start()
+            ui_timer.start()
+            # Update UI button state
+            colors = get_colors()
+            run_pause_btn_ref.current.style.bgcolor = colors["WARNING"]
+            run_pause_btn_ref.current.content = ft.Icon(ft.Icons.PAUSE, size=20, color="#FFFFFF")
+            run_pause_btn_ref.current.update()
+
+    def toggle_pause_hotkey():
+        nonlocal running, pause_flag
+        if not running:
+            return
+        colors = get_colors()
+        pause_flag = not pause_flag
+        if pause_flag:
+            run_pause_btn_ref.current.style.bgcolor = colors["SLOT_BG"]
+            run_pause_btn_ref.current.content = ft.Icon(ft.Icons.PLAY_ARROW, size=20, color=colors["FONT"])
+        else:
+            run_pause_btn_ref.current.style.bgcolor = colors["WARNING"]
+            run_pause_btn_ref.current.content = ft.Icon(ft.Icons.PAUSE, size=20, color="#FFFFFF")
+        run_pause_btn_ref.current.update()
+
+    def stop_macro_hotkey():
+        nonlocal running, pause_flag
+        if not running:
+            return
+        running = False
+        pause_flag = False
+        ui_timer.stop()
+        for i in range(7):
+            slot_cooldown_end[i] = 0
+            update_slot_display(i)
+        colors = get_colors()
+        run_pause_btn_ref.current.style.bgcolor = colors["SUCCESS"]
+        run_pause_btn_ref.current.content = ft.Icon(ft.Icons.PLAY_ARROW, size=20, color="#FFFFFF")
+        run_pause_btn_ref.current.update()
+        # _stop_precision_tracker()
+
+    keyboard.add_hotkey('f1', start_macro_hotkey, suppress=True)
+    keyboard.add_hotkey('f2', toggle_pause_hotkey, suppress=True)
+    keyboard.add_hotkey('f3', stop_macro_hotkey, suppress=True)
 
     def on_toggle_run_pause(e):
         nonlocal running, pause_flag
@@ -551,6 +436,7 @@ def main(page: ft.Page):
         run_pause_btn_ref.current.style.bgcolor = colors["SUCCESS"]
         run_pause_btn_ref.current.content = ft.Icon(ft.Icons.PLAY_ARROW, size=20, color="#FFFFFF")
         run_pause_btn_ref.current.update()
+        # _stop_precision_tracker()
 
     def open_settings(e):
         colors = get_colors()
@@ -563,6 +449,50 @@ def main(page: ft.Page):
             active_color=colors["PRIMARY"],
             label_style=ft.TextStyle(size=13, color=colors["FONT"])
         )
+
+        # track_precision_val = track_precision
+        # precision_interval_val = precision_interval
+
+        # if PRECISION_TRACKING_AVAILABLE:
+        #     track_precision_checkbox = ft.Checkbox(
+        #         label="Track Precision Buff",
+        #         value=track_precision_val,
+        #         check_color="#FFFFFF",
+        #         active_color=colors["PRIMARY"],
+        #         label_style=ft.TextStyle(size=13, color=colors["FONT"])
+        #     )
+        #
+        #     interval_slider_ref = ft.Ref[ft.Slider]()
+        #
+        #     def on_interval_change(e):
+        #         val = float(e.control.value)
+        #         e.control.label = f"{val:.2f}s"
+        #         e.control.update()
+        #
+        #     interval_slider = ft.Slider(
+        #         ref=interval_slider_ref,
+        #         min=0.1,
+        #         max=1.0,
+        #         divisions=18,
+        #         value=precision_interval_val,
+        #         label=f"{precision_interval_val:.2f}s",
+        #         on_change=on_interval_change,
+        #         thumb_color=colors["PRIMARY"],
+        #         active_color=colors["PRIMARY"],
+        #         inactive_color=colors["HINT"],
+        #         width=200,
+        #     )
+        #
+        #     performance_warn = ft.Text(
+        #         "⚠️ Lower intervals use more CPU/GPU",
+        #         size=11,
+        #         color=colors["DANGER"],
+        #         text_align=ft.TextAlign.CENTER,
+        #     )
+        # else:
+        #     track_precision_checkbox = None
+        #     interval_slider = None
+        #     performance_warn = None
 
         theme_names = ["light", "dark", "nothing", "pinky"]
         theme_index = theme_names.index(current_theme)
@@ -607,7 +537,7 @@ def main(page: ft.Page):
                             img_widget,
                             field,
                         ], spacing=2, alignment=ft.MainAxisAlignment.CENTER,
-                            horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER),
                         width=80,
                         alignment=ft.alignment.Alignment(0, 0),
                     )
@@ -617,10 +547,30 @@ def main(page: ft.Page):
             timer_grid.controls.append(ft.Row(row_items, spacing=8, alignment=ft.MainAxisAlignment.START))
 
         def save_and_close(_):
+            # nonlocal track_precision, precision_interval, precision_tracker
+
             new_always_on_top = always_on_top_checkbox.value
             new_theme = theme_names[theme_selector.selected_index]
             setattr(page.window, "always_on_top", new_always_on_top)
-            save_settings({"theme": new_theme, "always_on_top": new_always_on_top})
+
+            data_to_save = {"theme": new_theme, "always_on_top": new_always_on_top}
+
+            # if PRECISION_TRACKING_AVAILABLE:
+            #     new_track = track_precision_checkbox.value
+            #     new_interval = round(interval_slider.value, 2)
+            #     data_to_save["track_precision"] = new_track
+            #     data_to_save["precision_interval"] = new_interval
+            #
+            #     track_precision = new_track
+            #     precision_interval = new_interval
+            #
+            #     if running:
+            #         _stop_precision_tracker()
+            #         if new_track:
+            #             _start_precision_tracker()
+
+            save_settings(data_to_save)
+
             if new_theme != current_theme:
                 apply_theme(new_theme)
 
@@ -659,7 +609,7 @@ def main(page: ft.Page):
             style=ft.ButtonStyle(bgcolor=colors["PRIMARY"], color="#FFFFFF", shape=ft.RoundedRectangleBorder(radius=6))
         )
 
-        settings_content = ft.Column([
+        settings_content_controls = [
             ft.Row(
                 [
                     ft.Text("⚙️ Settings", size=18, weight="bold", color=colors["FONT"]),
@@ -672,6 +622,24 @@ def main(page: ft.Page):
             always_on_top_checkbox,
             ft.Row([ft.Text("Theme:", size=13, color=colors["FONT"]), theme_selector],
                    alignment=ft.MainAxisAlignment.START),
+        ]
+
+        # if PRECISION_TRACKING_AVAILABLE:
+        #     precision_row = ft.Row(
+        #         [
+        #             track_precision_checkbox,
+        #             interval_slider,
+        #         ],
+        #         alignment=ft.MainAxisAlignment.START,
+        #         vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        #         spacing=10,
+        #     )
+        #     settings_content_controls.extend([
+        #         precision_row,
+        #         performance_warn,
+        #     ])
+
+        settings_content_controls.extend([
             ft.Divider(height=16, color=ft.Colors.TRANSPARENT),
             ft.Row([
                 ft.Text("Material Cooldowns (sec)", size=14, weight="bold", color=colors["FONT"]),
@@ -679,7 +647,12 @@ def main(page: ft.Page):
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             ft.Container(timer_grid, padding=ft.Padding.only(top=6)),
             ft.Divider(height=16, color=ft.Colors.TRANSPARENT),
-        ], spacing=10, tight=True, scroll=ft.ScrollMode.AUTO, height=520)
+        ])
+
+        settings_content = ft.Column(
+            settings_content_controls,
+            spacing=10, tight=True, scroll=ft.ScrollMode.AUTO, height=520
+        )
 
         dialog = ft.AlertDialog(
             content=settings_content,
@@ -762,10 +735,11 @@ def main(page: ft.Page):
         preset_dropdown.options = options
 
     # Create buttons
-    apply_preset_btn = make_icon_button(ft.Icons.ARROW_OUTWARD_ROUNDED, THEMES[current_theme]["PRIMARY"], "Apply preset", apply_preset, apply_preset_btn_ref)
-    save_preset_btn = make_icon_button(ft.Icons.SAVE, THEMES[current_theme]["PRIMARY"], "Save Preset", save_preset, save_preset_btn_ref)
-    run_pause_btn = make_icon_button(ft.Icons.PLAY_ARROW, THEMES[current_theme]["SUCCESS"], "Start/Pause", on_toggle_run_pause, run_pause_btn_ref)
-    stop_btn = make_icon_button(ft.Icons.STOP, THEMES[current_theme]["DANGER"], "Stop", on_stop, stop_btn_ref)
+    colors = get_colors()
+    apply_preset_btn = make_icon_button(ft.Icons.ARROW_OUTWARD_ROUNDED, colors["PRIMARY"], "Apply preset", apply_preset, apply_preset_btn_ref)
+    save_preset_btn = make_icon_button(ft.Icons.SAVE, colors["PRIMARY"], "Save Preset", save_preset, save_preset_btn_ref)
+    run_pause_btn = make_icon_button(ft.Icons.PLAY_ARROW, colors["SUCCESS"], "Start/Pause", on_toggle_run_pause, run_pause_btn_ref)
+    stop_btn = make_icon_button(ft.Icons.STOP, colors["DANGER"], "Stop", on_stop, stop_btn_ref)
     settings_btn = make_icon_button(ft.Icons.SETTINGS, ft.Colors.GREY_700 if current_theme != "nothing" else ft.Colors.GREY_900, "Settings", open_settings, settings_btn_ref)
 
     def on_window_event(e):
@@ -784,26 +758,23 @@ def main(page: ft.Page):
             ft.Row([
                 ft.Container(
                     content=ft.Text(
-                        "🚫 Long-press slot to clear\n💡 Single-click slot to disable it\n📁 All save files are stored at \nC:\\Documents\\MacroFox",
+                        "\n".join(APP_TIPS),
                         size=11,
-                        color=THEMES[current_theme]["HINT"]
+                        color=colors["HINT"]
                     ),
                     expand=True
                 ),
                 ft.Container(
                     content=ft.Column([
-                        ft.Text("🦊 MacroFox v1.1", size=11, weight=ft.FontWeight.BOLD, color=THEMES[current_theme]["HINT"]),
-                        ft.Text("This macro is designed specifically for boosting by automating hotbar items usage\n", size=11, color=THEMES[current_theme]["HINT"]),
-                        ft.Text("Update Log:", size=11, weight=ft.FontWeight.BOLD, color=THEMES[current_theme]["HINT"]),
+                        ft.Text(f"🦊 MacroFox {APP_VERSION}", size=11, weight=ft.FontWeight.BOLD, color=colors["HINT"]),
+                        ft.Text("This macro is designed specifically for boosting by automating hotbar items usage\n",
+                                size=11, color=colors["HINT"]),
+                        ft.Text("Update Log:", size=11, weight=ft.FontWeight.BOLD, color=colors["HINT"]),
                         ft.Container(
                             content=ft.ListView(
                                 controls=[
-                                    ft.Text("• Materials now matching in-game inventory sorting", size=11, color=THEMES[current_theme]["HINT"]),
-                                    ft.Text("• Added new items (Snowflake, Red and Blue Extracts, Tropical Drink)", size=11, color=THEMES[current_theme]["HINT"]),
-                                    ft.Text("• Removed Micro-Converter", size=11, color=THEMES[current_theme]["HINT"]),
-                                    ft.Text("• You can customize Materials timer in settings.", size=11, color=THEMES[current_theme]["HINT"]),
-                                    ft.Text("• Now settings will not apply until you press save button", size=11, color=THEMES[current_theme]["HINT"]),
-                                    ft.Text("• Fixed image loading in single-file EXE", size=11, color=THEMES[current_theme]["HINT"]),
+                                    ft.Text(f"• {log}", size=11, color=colors["HINT"])
+                                    for log in UPDATE_LOG
                                 ],
                                 auto_scroll=False,
                                 padding=0,
@@ -843,5 +814,5 @@ def main(page: ft.Page):
     load_presets()
     page.update()
 
-# Run without assets_dir since we embed everything
+
 ft.run(main)
