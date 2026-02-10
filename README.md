@@ -13,6 +13,7 @@
 - Change Materials timers
 - Disable slots with one click
 - Settings saved between runs
+- Run, Pause and Sop with hotkeys! [f1, f2, f3]
 
 ## Installation
 1. Download latest [`MacroFox.exe`](https://github.com/GXX0T/MacroFox/releases) from releases page
@@ -39,7 +40,7 @@ pip install flet keyboard flet-timer
 > flet-timer (for UI updates)
 
 ```console
-pyinstaller --noconfirm --onefile --windowed --icon "C:\Users\YOUR_ICON_PATH" --name "MacroFox" --clean --add-data "C:\Users\YOUR_MATERIALS_PATH" --add-data "C:\Users\YOUR_BUILD_PATH." --hidden-import "flet, flet.core, flet.runtime, flet_timer"  "C:\Users\YOUR_EXPORT_PATH"
+pyinstaller --noconfirm --onefile --windowed --icon "C:\Users\YOUR_ICON_PATH" --name "MacroFox" --clean --add-data "C:\Users\YOUR_MATERIALS_PATH" --add-data "C:\Users\YOUR_ASSET_PATH", "C:\Users\YOUR_UTILS_PATH", "C:\Users\YOUR_CONST_PATH", "C:\Users\YOUR_UICOMP_PATH" --hidden-import "flet, flet.core, flet.runtime, flet_timer"  "C:\Users\YOUR_EXPORT_PATH"
 ```
 
 > I used `auto-py-to-exe` this time. You also can use `pyinstaller` or any other builder 
