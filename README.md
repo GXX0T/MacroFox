@@ -2,7 +2,7 @@
 
 # A hotbar automation tool for boosting efficiency in Bee Swarm Simualtor
 
-![GitHub all releases](https://img.shields.io/github/downloads/GXX0T/MacroFox/total?style=for-the-badge&color=d71920&labelColor=000000&label=DOWNLOADS&logo=)
+![GitHub Stars](https://img.shields.io/github/stars/GXX0T/MacroFox?style=for-the-badge&color=d71920&labelColor=000000&label=STARS&logo=) ![GitHub all releases](https://img.shields.io/github/downloads/GXX0T/MacroFox/total?style=for-the-badge&color=d71920&labelColor=000000&label=DOWNLOADS&logo=)
 
 > [!TIP]
 > Please leave me a star :3 ⭐
