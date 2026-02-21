@@ -13,7 +13,7 @@
 - Change Materials timers
 - Disable slots with one click
 - Settings saved between runs
-- Run, Pause and Sop with hotkeys! [f1, f2, f3]
+- Run, Pause and Stop with hotkeys! [`F1`, `F2`, `F3`]
 
 ## Installation
 1. Download latest [`MacroFox.exe`](https://github.com/GXX0T/MacroFox/releases) from releases page
