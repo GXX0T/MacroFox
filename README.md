@@ -7,7 +7,7 @@
 > [!TIP]
 > Please leave me a star :3 ⭐
 
-> [!WARN]
+> [!WARNING]
 > Most probably will not continue working on this project
 
 ## Features
