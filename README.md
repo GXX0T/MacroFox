@@ -7,6 +7,9 @@
 > [!TIP]
 > Please leave me a star :3 ⭐
 
+> [!WARN]
+> Most probably will not continue working on this project
+
 ## Features
 - Light / Dark / Nothing / Pinky themes
 - Save and load presets
